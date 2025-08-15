@@ -1,0 +1,99 @@
+.leave-form-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.leave-form-container.submitted {
+  text-align: center;
+  padding: 3rem;
+}
+
+.success-icon {
+  margin: 0 auto 1rem;
+  width: 64px; height: 64px;
+  background: #d1fae5;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.form-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+.date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.icon { width: 28px; height: 28px; color: #3b82f6; }
+.icon-small { width: 16px; height: 16px; margin-right: 0.25rem; color: #3b82f6; }
+
+input, select, textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+.error { border-color: #f87171 !important; background: #fef2f2 !important; }
+.error-text { color: #b91c1c; font-size: 0.875rem; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem; }
+
+.total-days {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+}
+
+.submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: white;
+  font-weight: 600;
+  border-radius: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-btn:disabled {
+  background: linear-gradient(to right, #9ca3af, #6b7280);
+  cursor: not-allowed;
+}
+
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid white;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

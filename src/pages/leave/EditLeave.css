@@ -1,0 +1,113 @@
+/* styles.css */
+
+/* Reset & Base */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9f9fb;
+  color: #333;
+}
+
+h1, h2, h3 {
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Layout Helpers */
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* Status Badges */
+.badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge.pending {
+  background-color: #fff4e5;
+  color: #d17a00;
+}
+
+.badge.approved {
+  background-color: #e6f9ec;
+  color: #1b7d2b;
+}
+
+.badge.rejected {
+  background-color: #fde8e8;
+  color: #a91b1b;
+}
+
+/* Role Tags */
+.role {
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.role.admin {
+  background-color: #e6f0ff;
+  color: #0044cc;
+}
+
+.role.manager {
+  background-color: #fff0f0;
+  color: #b30000;
+}
+
+.role.employee {
+  background-color: #f0fff4;
+  color: #006600;
+}
+
+/* Table Styling */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.table th, 
+.table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.table th {
+  background-color: #f1f1f1;
+  text-align: left;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.btn.primary {
+  background-color: #4a90e2;
+  color: #fff;
+}
+
+.btn.danger {
+  background-color: #d9534f;
+  color: #fff;
+}
+
+.btn.success {
+  background-color: #5cb85c;
+  color: #fff;
+}

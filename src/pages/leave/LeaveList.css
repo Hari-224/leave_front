@@ -1,0 +1,60 @@
+.leave-list-container {
+  padding: 20px;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.leave-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--table-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.leave-table th,
+.leave-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.leave-table th {
+  background: var(--table-header-bg);
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.badge.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.view-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.view-btn:hover {
+  background-color: var(--primary-dark);
+}

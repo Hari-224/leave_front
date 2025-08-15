@@ -1,0 +1,55 @@
+/* Base Card */
+.card {
+  background: white;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+  border-radius: 8px;
+}
+.card.bordered { border: 1px solid #ddd; }
+.card.hoverable:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.card.clickable { cursor: pointer; }
+.card.md { padding: 16px; border-radius: 12px; }
+.card.sm { padding: 12px; border-radius: 8px; }
+.card.lg { padding: 24px; border-radius: 16px; }
+.card.xl { padding: 32px; border-radius: 20px; }
+
+/* Variants */
+.card.default { border-color: #e5e7eb; }
+.card.primary { background: #ebf8ff; border-color: #bfdbfe; }
+.card.success { background: #ecfdf5; border-color: #a7f3d0; }
+.card.warning { background: #fef3c7; border-color: #fde68a; }
+.card.danger { background: #fee2e2; border-color: #fca5a5; }
+.card.info { background: #cffafe; border-color: #67e8f9; }
+.card.gradient { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border: none; }
+
+/* Shadow */
+.card.shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.card.shadow-md { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.card.shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+
+/* Header */
+.card-header { display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: center; }
+.header-left { display: flex; gap: 0.5rem; align-items: center; }
+.header-left .icon { width: 1.25rem; height: 1.25rem; }
+.header-actions { display: flex; gap: 0.25rem; }
+
+/* Body */
+.card-body { color: #374151; }
+.card-body .grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0.75rem; }
+.card-body .reason { margin-top: 0.5rem; font-size: 0.875rem; }
+
+/* Footer */
+.card-footer { margin-top: 1rem; }
+.card-footer.separated { border-top: 1px solid #e5e7eb; padding-top: 0.5rem; text-align: right; }
+.btn-approve { padding: 0.5rem 1rem; background: #16a34a; color:white; border-radius: 8px; margin-left:0.5rem; }
+.btn-approve:hover { background: #15803d; }
+.btn-reject { padding: 0.5rem 1rem; border:1px solid #ef4444; color:#ef4444; border-radius: 8px; }
+.btn-reject:hover { background: #fee2e2; }
+
+/* Expandable */
+.expand-btn { display:flex; justify-content:space-between; width:100%; background:none; border:none; cursor:pointer; padding:0; margin-bottom:0.5rem; }
+
+/* Profile */
+.profile-avatar { width: 4rem; height:4rem; border-radius:50%; background: linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.25rem; margin:0 auto 0.5rem; }
+.profile-actions { display:flex; gap:0.5rem; justify-content:center; margin-top:0.5rem; }

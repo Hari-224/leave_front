@@ -1,0 +1,34 @@
+.leave-table { background: #fff; border-radius: 1rem; border: 1px solid #eee; overflow: hidden; }
+.header { display:flex; justify-content: space-between; padding: 1rem; border-bottom: 1px solid #eee; background: linear-gradient(to right, #f0f5ff, #e0e7ff); align-items:center; gap:1rem; }
+.header h2 { display:flex; align-items:center; gap:0.5rem; }
+.header-actions button { display:flex; align-items:center; gap:0.25rem; padding:0.5rem 1rem; border-radius:0.5rem; border:1px solid #ccc; cursor:pointer; background:#fff; }
+.search-filters { padding: 1rem; border-bottom:1px solid #eee; display:flex; flex-direction:column; gap:0.5rem; }
+.search { position:relative; }
+.search input { width:100%; padding:0.5rem 0.5rem 0.5rem 2rem; border-radius:0.5rem; border:1px solid #ccc; }
+.search svg { position:absolute; top:50%; left:0.5rem; transform:translateY(-50%); color:#999; }
+.filters select { padding:0.5rem; border-radius:0.5rem; border:1px solid #ccc; margin-right:0.5rem; }
+
+.table-container { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:0.75rem; text-align:left; border-bottom:1px solid #eee; }
+th { cursor:pointer; user-select:none; }
+.actions button { background:none; border:none; cursor:pointer; padding:0.25rem; margin-right:0.25rem; border-radius:0.25rem; }
+.actions button:hover { background:#f0f0f0; }
+
+.badge { display:inline-flex; align-items:center; gap:0.25rem; padding:0.25rem 0.5rem; border-radius:9999px; font-size:0.75rem; font-weight:500; }
+.badge-approved { background:#d1fae5; color:#065f46; }
+.badge-rejected { background:#fee2e2; color:#991b1b; }
+.badge-pending { background:#fef3c7; color:#92400e; }
+.badge-gray { background:#f3f4f6; color:#374151; }
+
+.icon-green { color:#16a34a; }
+.icon-red { color:#dc2626; }
+.icon-yellow { color:#ca8a04; }
+.icon-gray { color:#6b7280; }
+
+.empty { text-align:center; padding:2rem; color:#6b7280; }
+
+.bulk-actions { display:flex; justify-content:space-between; padding:0.75rem 1rem; border-top:1px solid #eee; background:#f9fafb; }
+.bulk-actions button { padding:0.5rem 1rem; border-radius:0.5rem; border:none; cursor:pointer; }
+.bulk-actions button:first-child { background:#d1fae5; color:#065f46; }
+.bulk-actions button:last-child { background:#fee2e2; color:#991b1b; }

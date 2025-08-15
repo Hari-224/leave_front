@@ -1,0 +1,13 @@
+export const ROLES = {
+  ADMIN: "ADMIN",
+  MANAGER: "MANAGER",
+  EMPLOYEE: "EMPLOYEE",
+};
+
+export const LEAVE_STATUS = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+};
+
+export const LEAVE_TYPES = ["SICK", "CASUAL", "EARNED"];

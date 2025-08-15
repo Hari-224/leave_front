@@ -1,0 +1,21 @@
+.input-container { position: relative; display: flex; flex-direction: column; }
+.input-label { font-weight: 500; margin-bottom: 0.25rem; color: #374151; }
+.required { color: #f87171; margin-left: 0.25rem; }
+.input-wrapper { position: relative; display: flex; align-items: center; }
+.input-base { width: 100%; transition: all 0.2s; outline: none; }
+.input-base.default { border: 1px solid #d1d5db; background: #fff; border-radius: 0.5rem; padding: 0.625rem 1rem; }
+.input-base.filled { border: 1px solid transparent; background: #f3f4f6; border-radius: 0.5rem; padding: 0.625rem 1rem; }
+.input-base.outlined { border: 2px solid #d1d5db; background: #fff; border-radius: 0.5rem; padding: 0.625rem 1rem; }
+.input-base.underlined { border: 0; border-bottom: 2px solid #d1d5db; background: transparent; border-radius: 0; padding: 0.625rem 0; }
+.input-base.sm { font-size: 0.875rem; }
+.input-base.md { font-size: 1rem; }
+.input-base.lg { font-size: 1.125rem; }
+.input-base.xl { font-size: 1.25rem; }
+.icon-left { position: absolute; left: 0.75rem; pointer-events: none; display: flex; align-items: center; }
+.icon-right { position: absolute; right: 0.75rem; display: flex; align-items: center; }
+.success { border-color: #34d399; background: #d1fae5; }
+.error { border-color: #f87171; background: #fee2e2; }
+.error-text { color: #b91c1c; font-size: 0.875rem; }
+.success-text { color: #15803d; font-size: 0.875rem; }
+.helper-text { color: #6b7280; font-size: 0.875rem; }
+.char-count { color: #9ca3af; font-size: 0.75rem; text-align: right; }

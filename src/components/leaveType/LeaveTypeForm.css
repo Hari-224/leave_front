@@ -1,0 +1,23 @@
+.leave-form { max-width: 900px; margin:auto; background:#fff; border-radius:0.5rem; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+.header { display:flex; justify-content:space-between; background:linear-gradient(to right,#3b82f6,#2563eb); color:#fff; padding:1rem; align-items:center; }
+.header .title { display:flex; align-items:center; gap:0.5rem; font-weight:600; }
+.cancel-btn { background:transparent; border:none; color:#fff; cursor:pointer; }
+.form-body { padding:1.5rem; }
+.error-banner { display:flex; align-items:center; gap:0.5rem; background:#fee2e2; border:1px solid #fca5a5; padding:0.5rem; border-radius:0.375rem; margin-bottom:1rem; }
+.main-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
+@media(min-width:1024px){ .main-grid{ grid-template-columns:2fr 1fr; } }
+.left-column .section { background:#f9fafb; padding:1rem; border-radius:0.5rem; margin-bottom:1rem; }
+.left-column label { display:block; font-weight:500; margin-top:0.5rem; margin-bottom:0.25rem; }
+.left-column input, .left-column select, .left-column textarea { width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:0.375rem; }
+.left-column .error { color:#b91c1c; font-size:0.875rem; margin-top:0.25rem; }
+.color-options { display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.25rem; }
+.color-options button { width:1.25rem; height:1.25rem; border-radius:50%; border:2px solid #e5e7eb; cursor:pointer; }
+.color-options button.selected { border-color:#374151; }
+.advanced-btn { display:flex; align-items:center; gap:0.25rem; font-weight:500; background:transparent; border:none; cursor:pointer; }
+.advanced-options label { display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; }
+.right-column .preview { background:#f9fafb; padding:1rem; border-radius:0.5rem; position:sticky; top:1.5rem; }
+.card { background:#fff; padding:0.75rem; border-radius:0.375rem; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+.color-dot { width:0.75rem; height:0.75rem; border-radius:50%; display:inline-block; margin-right:0.25rem; }
+.form-actions { display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem; }
+.form-actions button { padding:0.5rem 1rem; border-radius:0.375rem; border:none; cursor:pointer; }
+.form-actions button[disabled] { opacity:0.5; cursor:not-allowed; }
