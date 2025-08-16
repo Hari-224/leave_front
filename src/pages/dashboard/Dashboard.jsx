@@ -1,37 +1,35 @@
-// src/pages/dashboard/Dashboard.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  Calendar, Clock, Users, FileText, Settings, Bell, User, LogOut,
-  Menu, X, CheckCircle, XCircle, AlertCircle, Plus, BarChart3
+  Calendar, Clock, Users, FileText, Settings, Bell, LogOut, Menu, X,
+  CheckCircle, BarChart3, Plus
 } from "lucide-react";
 import axios from "axios";
-import { useAuth } from "../../hooks/useAuth"; // JWT auth hook
+import { useAuth } from "../../hooks/useAuth";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const { user: authUser, token, logout } = useAuth();
-  const [role, setRole] = useState(authUser?.role || "admin");
+  const [role, setRole] = useState(authUser?.role?.toLowerCase() || "admin");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const [page, setPage] = useState("overview");
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Axios instance with JWT
   const api = axios.create({
     baseURL: "http://localhost:8080/api",
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  // Fetch dashboard stats
-  const fetchStats = async () => {
+  // Memoized fetchStats to prevent useEffect warnings
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       if (role === "admin") {
         const leavesRes = await api.get("/leaves");
-        const leaves = leavesRes.data;
+        const leaves = leavesRes.data || [];
         const pending = leaves.filter(l => l.status === "PENDING").length;
-        const approvedToday = leaves.filter(l => 
+        const approvedToday = leaves.filter(l =>
           l.approvedDate && new Date(l.approvedDate).toDateString() === new Date().toDateString()
         ).length;
         const employeesRes = await api.get("/users");
@@ -39,11 +37,11 @@ const Dashboard = () => {
           totalLeaves: leaves.length,
           pendingApprovals: pending,
           approvedToday,
-          activeEmployees: employeesRes.data.length,
+          activeEmployees: employeesRes.data?.length || 0,
         });
       } else if (role === "manager") {
-        const teamLeavesRes = await api.get(`/leaves/team/${authUser.id}`);
-        const teamLeaves = teamLeavesRes.data;
+        const teamLeavesRes = await api.get(`/leaves/team/${authUser?.id}`);
+        const teamLeaves = teamLeavesRes.data || [];
         const pending = teamLeaves.filter(l => l.status === "PENDING").length;
         const approvedThisWeek = teamLeaves.filter(l => {
           if (!l.approvedDate) return false;
@@ -53,41 +51,40 @@ const Dashboard = () => {
           weekAgo.setDate(today.getDate() - 7);
           return approvedDate >= weekAgo && approvedDate <= today && l.status === "APPROVED";
         }).length;
-        const teamRes = await api.get(`/users/team/${authUser.id}`);
+        const teamRes = await api.get(`/users/team/${authUser?.id}`);
         setStats({
           teamLeaves: teamLeaves.length,
           pendingApprovals: pending,
           approvedThisWeek,
-          teamSize: teamRes.data.length,
+          teamSize: teamRes.data?.length || 0,
         });
       } else if (role === "employee") {
-        const myLeavesRes = await api.get(`/leaves/user/${authUser.id}`);
-        const myLeaves = myLeavesRes.data;
+        const myLeavesRes = await api.get(`/leaves/user/${authUser?.id}`);
+        const myLeaves = myLeavesRes.data || [];
         const pendingRequests = myLeaves.filter(l => l.status === "PENDING").length;
         const usedLeaves = myLeaves.filter(l => l.status === "APPROVED").length;
         setStats({
           totalLeaves: myLeaves.length,
           usedLeaves,
-          remainingLeaves: 20 - usedLeaves, // adjust as per your policy
+          remainingLeaves: 20 - usedLeaves,
           pendingRequests,
         });
       }
 
-      // Notifications
       const notifRes = await api.get("/notifications");
-      setNotifications(notifRes.data.length);
-
+      setNotifications(notifRes.data?.length || 0);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
       alert("Failed to fetch dashboard data");
     } finally {
       setLoading(false);
     }
-  };
+  }, [role, authUser?.id, api]);
 
+  // Fetch stats whenever role changes
   useEffect(() => {
     fetchStats();
-  }, [role]);
+  }, [fetchStats]);
 
   const navItems = {
     admin: [
@@ -109,9 +106,7 @@ const Dashboard = () => {
 
   const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
     <div className="stat-card">
-      <div className={`stat-icon ${color}-bg`}>
-        <Icon className={`${color}-text`} />
-      </div>
+      <div className={`stat-icon ${color}-bg`}><Icon className={`${color}-text`} /></div>
       <div>
         <p className="stat-title">{title}</p>
         <p className="stat-value">{loading ? "..." : value}</p>
@@ -122,6 +117,7 @@ const Dashboard = () => {
 
   const RoleContent = () => {
     if (page !== "overview") return <div className="page-placeholder">{page.toUpperCase()} PAGE</div>;
+
     if (role === "admin") {
       return (
         <div className="grid">
@@ -132,6 +128,7 @@ const Dashboard = () => {
         </div>
       );
     }
+
     if (role === "manager") {
       return (
         <div className="grid">
@@ -142,6 +139,7 @@ const Dashboard = () => {
         </div>
       );
     }
+
     if (role === "employee") {
       return (
         <div className="grid">
@@ -173,16 +171,16 @@ const Dashboard = () => {
           <button onClick={() => setPage("overview")} className={page === "overview" ? "active" : ""}>
             <BarChart3 /> Overview
           </button>
-          {navItems[role].map(item => (
+          {navItems[role]?.map(item => (
             <button key={item.path} onClick={() => setPage(item.path)} className={page === item.path ? "active" : ""}>
               <item.icon /> {item.label}
             </button>
           ))}
         </nav>
         <div className="sidebar-user">
-          <img src={authUser.avatar || ""} alt={authUser.name} />
+          <img src={authUser?.avatar || ""} alt={authUser?.name || "User"} />
           <div>
-            <p>{authUser.name}</p>
+            <p>{authUser?.name || "User"}</p>
             <small>{role.charAt(0).toUpperCase() + role.slice(1)}</small>
           </div>
           <button onClick={logout}><LogOut /> Logout</button>
@@ -196,8 +194,8 @@ const Dashboard = () => {
             <Bell />
             {notifications > 0 && <span>{notifications}</span>}
           </button>
-          <img src={authUser.avatar || ""} alt={authUser.name} className="avatar" />
-          <span>{authUser.name}</span>
+          <img src={authUser?.avatar || ""} alt={authUser?.name || "User"} className="avatar" />
+          <span>{authUser?.name || "User"}</span>
         </div>
       </header>
 

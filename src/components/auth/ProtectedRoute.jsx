@@ -1,8 +1,7 @@
-// src/components/auth/ProtectedRoute.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AlertCircle, Loader2, UserX } from "lucide-react";
 import { getToken, removeToken } from "../../utils/storage";
-import { jwtDecode } from "jwt-decode"; // ✅ named import
+import { jwtDecode } from "jwt-decode"; // ✅ correct named import
 import "./ProtectedRoute.css";
 
 // Loading Screen
@@ -73,7 +72,15 @@ const ProtectedRoute = ({
   const tokenData = getToken();
   const token = tokenData?.token;
 
-  const redirect = (path) => (window.location.href = path);
+  const redirect = useCallback((path) => {
+    window.location.href = path;
+  }, []);
+
+  // Stable logout function
+  const logout = useCallback(() => {
+    removeToken();
+    redirect("/login");
+  }, [redirect]);
 
   // Decode JWT to get user info
   useEffect(() => {
@@ -81,9 +88,8 @@ const ProtectedRoute = ({
       redirect(fallbackPath);
       return;
     }
-
     try {
-      const decoded = jwtDecode(token); // ✅ named import usage
+      const decoded = jwtDecode(token);
       setUser({ email: decoded.email, role: decoded.role });
       setIsAuthenticated(true);
     } catch (err) {
@@ -93,9 +99,9 @@ const ProtectedRoute = ({
     } finally {
       setLoading(false);
     }
-  }, [token, fallbackPath]);
+  }, [token, fallbackPath, redirect]);
 
-  // Track user activity
+  // Track user activity for session timeout
   useEffect(() => {
     const updateActivity = () => setLastActivity(Date.now());
     ["mousedown", "keydown", "scroll", "touchstart"].forEach(evt =>
@@ -108,7 +114,7 @@ const ProtectedRoute = ({
     };
   }, []);
 
-  // Session timeout
+  // Session timeout logic
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -123,9 +129,9 @@ const ProtectedRoute = ({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [lastActivity, isAuthenticated, sessionTimeoutMinutes]);
+  }, [lastActivity, isAuthenticated, sessionTimeoutMinutes, logout]);
 
-  // Role check
+  // Role hierarchy check
   const hasRole = (userRole, required) => {
     if (!required) return true;
     if (userRole === required) return true;
@@ -133,47 +139,21 @@ const ProtectedRoute = ({
     return hierarchy.indexOf(userRole) > hierarchy.indexOf(required);
   };
 
-  const handleRetry = () => window.location.reload();
-
-  const extendSession = () => {
-    setLastActivity(Date.now());
-    setSessionWarning(false);
-  };
-
-  const logout = () => {
-    removeToken();
-    redirect("/login");
-  };
+  const handleRetry = useCallback(() => window.location.reload(), []);
+  const extendSession = useCallback(() => { setLastActivity(Date.now()); setSessionWarning(false); }, []);
 
   if (loading) return <AuthLoading />;
-
   if (!isAuthenticated || !user) {
     redirect(fallbackPath);
     return <AuthLoading />;
   }
+  if (requiredRole && !hasRole(user.role, requiredRole))
+    return <Unauthorized requiredRole={requiredRole} userRole={user.role} onRetry={handleRetry} />;
 
-  if (requiredRole && !hasRole(user.role, requiredRole)) {
-    return (
-      <Unauthorized
-        requiredRole={requiredRole}
-        userRole={user.role}
-        onRetry={handleRetry}
-      />
-    );
-  }
-
-  return (
-    <>
-      {children}
-      {sessionWarning && (
-        <SessionWarning
-          onExtend={extendSession}
-          onLogout={logout}
-          timeLeft={timeLeft}
-        />
-      )}
-    </>
-  );
+  return <>
+    {children}
+    {sessionWarning && <SessionWarning onExtend={extendSession} onLogout={logout} timeLeft={timeLeft} />}
+  </>;
 };
 
 export default ProtectedRoute;

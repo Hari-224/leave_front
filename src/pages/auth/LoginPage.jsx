@@ -1,8 +1,9 @@
 // src/pages/auth/LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, AlertCircle } from "lucide-react";
-import { login } from "../../api/authApi"; // Named import
+import { Eye, EyeOff, User, AlertCircle } from "lucide-react";
+import { login } from "../../api/authApi";
+import { setToken } from "../../utils/storage"; // Save JWT & user info
 import "./LoginPage.css";
 
 const LoginPage = () => {
@@ -41,12 +42,21 @@ const LoginPage = () => {
     setIsSubmitting(true);
     try {
       const data = await login(form);
-      // Save token and user info for ProtectedRoute
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify({ email: data.email, role: data.role }));
+
+      // Save token & user info (including name & avatar)
+      setToken({
+        token: data.token,
+        email: data.email,
+        role: data.role,
+        name: data.name || data.email.split("@")[0], // fallback if backend doesn't provide name
+        avatar: data.avatar || "", // fallback if backend doesn't provide avatar
+      });
+
       navigate("/dashboard");
     } catch (err) {
-      setErrors({ submit: err.response?.data?.message || "Invalid credentials" });
+      setErrors({
+        submit: err.response?.data?.message || "Invalid credentials",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -62,9 +72,20 @@ const LoginPage = () => {
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          {errors.submit && <div className="submit-error"><AlertCircle /> {errors.submit}</div>}
+          {errors.submit && (
+            <div className="submit-error">
+              <AlertCircle /> {errors.submit}
+            </div>
+          )}
 
-          <InputField label="Email Address" name="email" value={form.email} error={errors.email} onChange={handleChange} />
+          <InputField
+            label="Email Address"
+            name="email"
+            value={form.email}
+            error={errors.email}
+            onChange={handleChange}
+          />
+
           <PasswordField
             label="Password"
             name="password"
@@ -83,7 +104,9 @@ const LoginPage = () => {
         <div className="login-footer">
           <p>
             Don't have an account?{" "}
-            <button className="link-btn" onClick={() => navigate("/register")}>Sign up</button>
+            <button className="link-btn" onClick={() => navigate("/register")}>
+              Sign up
+            </button>
           </p>
         </div>
       </div>
@@ -91,20 +114,36 @@ const LoginPage = () => {
   );
 };
 
+// InputField Component
 const InputField = ({ label, name, value, error, onChange }) => (
   <div className="input-group">
     <label>{label}</label>
-    <input type="text" name={name} value={value} onChange={onChange} className={error ? "error" : ""} />
+    <input
+      type="text"
+      name={name}
+      value={value}
+      onChange={onChange}
+      className={error ? "error" : ""}
+    />
     {error && <span className="error-text">{error}</span>}
   </div>
 );
 
+// PasswordField Component
 const PasswordField = ({ label, name, value, error, show, toggle, onChange }) => (
   <div className="input-group">
     <label>{label}</label>
     <div className="password-wrapper">
-      <input type={show ? "text" : "password"} name={name} value={value} onChange={onChange} className={error ? "error" : ""} />
-      <span className="toggle-password" onClick={toggle}>{show ? <EyeOff /> : <Eye />}</span>
+      <input
+        type={show ? "text" : "password"}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={error ? "error" : ""}
+      />
+      <span className="toggle-password" onClick={toggle}>
+        {show ? <EyeOff /> : <Eye />}
+      </span>
     </div>
     {error && <span className="error-text">{error}</span>}
   </div>

@@ -1,6 +1,5 @@
-// src/routes/AppRouter.jsx
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -18,22 +17,28 @@ function AppRouter() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
+      {/* Redirect root to dashboard if logged in */}
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+
       {/* Protected routes */}
       <Route
-        path="/*"
+        path="/dashboard/*"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         }
       >
-        {/* Dashboard child routes */}
+        {/* Nested routes inside dashboard */}
         <Route index element={<LeaveList />} />
         <Route path="create-leave" element={<CreateLeave />} />
         <Route path="leave/:id" element={<LeaveDetailsPage />} />
         <Route path="leave/:id/edit" element={<EditLeave />} />
         <Route path="leave-types" element={<LeaveTypeList />} />
       </Route>
+
+      {/* Catch-all route for 404 */}
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
 }
