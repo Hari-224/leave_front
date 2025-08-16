@@ -1,16 +1,9 @@
+// src/pages/leaves/LeaveTypeList.jsx
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Calendar, CheckCircle, AlertCircle, X } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth"; // JWT hook
+import axios from "axios";
 import "./LeaveTypeList.css";
-
-const leaveTypeApi = {
-  getAll: () => Promise.resolve({ data: [
-    { id: 1, name: "Annual Leave", count: 12 },
-    { id: 2, name: "Sick Leave", count: 8 },
-    { id: 3, name: "Personal Leave", count: 3 }
-  ]}),
-  create: (data) => Promise.resolve({ data: { id: Date.now(), ...data, count: 0 } }),
-  remove: () => Promise.resolve({ success: true })
-};
 
 const Notification = ({ message, type, onClose }) => (
   <div className={`notification ${type}`}>
@@ -21,6 +14,7 @@ const Notification = ({ message, type, onClose }) => (
 );
 
 const LeaveTypeList = () => {
+  const { token } = useAuth();
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [newType, setNewType] = useState("");
   const [loading, setLoading] = useState(true);
@@ -28,18 +22,33 @@ const LeaveTypeList = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [notification, setNotification] = useState(null);
 
+  const api = axios.create({
+    baseURL: "http://localhost:8080/api",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
   const showNote = (msg, type = "success") => {
     setNotification({ message: msg, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Fetch leave types from backend
   useEffect(() => {
-    leaveTypeApi.getAll()
-      .then(res => setLeaveTypes(res.data))
-      .catch(() => showNote("Failed to fetch leave types", "error"))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchLeaveTypes = async () => {
+      try {
+        const res = await api.get("/leave-types");
+        setLeaveTypes(res.data || []);
+      } catch (err) {
+        console.error(err);
+        showNote("Failed to fetch leave types", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeaveTypes();
+  }, [token]);
 
+  // Add a new leave type
   const handleAdd = async () => {
     const name = newType.trim();
     if (!name) return showNote("Please enter a leave type name", "error");
@@ -48,25 +57,29 @@ const LeaveTypeList = () => {
 
     setAdding(true);
     try {
-      const res = await leaveTypeApi.create({ name });
+      const res = await api.post("/leave-types", { name });
       setLeaveTypes([...leaveTypes, res.data]);
       setNewType("");
       showNote(`"${name}" added successfully!`);
-    } catch {
-      showNote("Failed to add leave type", "error");
+    } catch (err) {
+      console.error(err);
+      showNote(err.response?.data?.message || "Failed to add leave type", "error");
     } finally {
       setAdding(false);
     }
   };
 
+  // Delete a leave type
   const handleDelete = async (id, name) => {
+    if (!id) return;
     setDeletingId(id);
     try {
-      await leaveTypeApi.remove(id);
+      await api.delete(`/leave-types/${id}`);
       setLeaveTypes(leaveTypes.filter(t => t.id !== id));
       showNote(`"${name}" deleted successfully!`);
-    } catch {
-      showNote("Failed to delete leave type", "error");
+    } catch (err) {
+      console.error(err);
+      showNote(err.response?.data?.message || "Failed to delete leave type", "error");
     } finally {
       setDeletingId(null);
     }
@@ -104,7 +117,7 @@ const LeaveTypeList = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 mt-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-600" /> Current Leave Types
             <span className="ml-auto text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
@@ -138,7 +151,11 @@ const LeaveTypeList = () => {
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <span className="text-xs text-gray-400">ID: {type.id}</span>
-                    <button onClick={() => handleDelete(type.id, type.name)} disabled={deletingId === type.id} className="delete-btn">
+                    <button
+                      onClick={() => handleDelete(type.id, type.name)}
+                      disabled={deletingId === type.id}
+                      className="delete-btn"
+                    >
                       {deletingId === type.id ? <div className="delete-spinner" /> : <Trash2 className="w-4 h-4" />}
                       {deletingId === type.id ? "Deleting..." : "Delete"}
                     </button>

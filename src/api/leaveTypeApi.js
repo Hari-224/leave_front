@@ -1,12 +1,70 @@
+// src/api/leaveTypeApi.js
 import axios from "axios";
 import { getToken } from "../utils/storage";
-const API_URL = process.env.REACT_APP_API_BASE_URL;
 
-const getConfig = () => ({ headers: { Authorization: `Bearer ${getToken()?.token}` } });
+// Base URL for leave type endpoints
+const API_URL = "/api/leave-types";
 
-const getAll = () => axios.get(`${API_URL}/leave-types`, getConfig());
-const create = (data) => axios.post(`${API_URL}/leave-types`, data, getConfig());
-const update = (id, data) => axios.put(`${API_URL}/leave-types/${id}`, data, getConfig());
-const remove = (id) => axios.delete(`${API_URL}/leave-types/${id}`, getConfig());
+/**
+ * Helper to get Authorization headers with JWT
+ */
+const getAuthHeaders = () => {
+  const token = getToken()?.token;
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
 
-export default { getAll, create, update, remove };
+/**
+ * Fetch all leave types
+ */
+export const getAllLeaveTypes = async () => {
+  const res = await axios.get(API_URL, getAuthHeaders());
+  return res.data;
+};
+
+/**
+ * Fetch leave type by ID
+ * @param {string|number} id - Leave type ID
+ */
+export const getLeaveTypeById = async (id) => {
+  const res = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
+  return res.data;
+};
+
+/**
+ * Create a new leave type
+ * @param {object} leaveType - { name: string, count?: number }
+ */
+export const createLeaveType = async (leaveType) => {
+  const res = await axios.post(API_URL, leaveType, getAuthHeaders());
+  return res.data;
+};
+
+/**
+ * Update leave type by ID
+ * @param {string|number} id - Leave type ID
+ * @param {object} leaveType - Updated leave type data
+ */
+export const updateLeaveType = async (id, leaveType) => {
+  const res = await axios.put(`${API_URL}/${id}`, leaveType, getAuthHeaders());
+  return res.data;
+};
+
+/**
+ * Delete leave type by ID
+ * @param {string|number} id - Leave type ID
+ */
+export const deleteLeaveType = async (id) => {
+  const res = await axios.delete(`${API_URL}/${id}`, getAuthHeaders());
+  return res.data;
+};
+
+/**
+ * Default export for convenience
+ */
+export default {
+  getAllLeaveTypes,
+  getLeaveTypeById,
+  createLeaveType,
+  updateLeaveType,
+  deleteLeaveType,
+};

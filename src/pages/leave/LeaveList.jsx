@@ -1,28 +1,74 @@
+// src/pages/leaves/LeaveList.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import leaveApi from "../../api/leaveApi"; // import the default object
+import { useAuth } from "../../hooks/useAuth"; // JWT hook
+import axios from "axios";
 import { LEAVE_STATUS } from "../../utils/constants";
+import { Loader2 } from "lucide-react";
 import "./LeaveList.css";
 
 const LeaveList = () => {
+  const { token } = useAuth();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  const api = axios.create({
+    baseURL: "http://localhost:8080/api",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // Fetch all leave applications
   useEffect(() => {
     const fetchLeaves = async () => {
       try {
-        const res = await leaveApi.getAll(); // call getAll from default export
+        const res = await api.get("/leave-applications");
         setLeaves(res.data);
-      } catch (error) {
-        console.error("Error fetching leave applications:", error);
+      } catch (err) {
+        console.error("Error fetching leave applications:", err);
+        setError(err.response?.data?.message || "Failed to fetch leaves");
       } finally {
         setLoading(false);
       }
     };
     fetchLeaves();
-  }, []);
+  }, [token]);
 
-  if (loading) return <p>Loading...</p>;
+  const getStatusClass = (status) => {
+    switch (status?.toUpperCase()) {
+      case LEAVE_STATUS.PENDING:
+        return "badge pending";
+      case LEAVE_STATUS.APPROVED:
+        return "badge approved";
+      case LEAVE_STATUS.REJECTED:
+        return "badge rejected";
+      default:
+        return "badge";
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (loading)
+    return (
+      <div className="loading-screen">
+        <Loader2 className="spin" /> Loading leave applications...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="error-screen">
+        <p>{error}</p>
+      </div>
+    );
 
   return (
     <div className="leave-list-container">
@@ -46,15 +92,15 @@ const LeaveList = () => {
             {leaves.map((leave) => (
               <tr key={leave.id}>
                 <td>{leave.id}</td>
-                <td>{leave.type}</td>
+                <td>{leave.leaveType || leave.type || "-"}</td>
                 <td>
-                  <span className={`badge ${leave.status.toLowerCase()}`}>
-                    {leave.status}
+                  <span className={getStatusClass(leave.status)}>
+                    {leave.status || "-"}
                   </span>
                 </td>
-                <td>{leave.startDate}</td>
-                <td>{leave.endDate}</td>
-                <td>{leave.requestedBy?.name || "N/A"}</td>
+                <td>{formatDate(leave.startDate)}</td>
+                <td>{formatDate(leave.endDate)}</td>
+                <td>{leave.user?.name || leave.requestedBy?.name || "N/A"}</td>
                 <td>
                   <Link to={`/leave/${leave.id}`} className="view-btn">
                     View

@@ -1,9 +1,12 @@
+// src/pages/auth/RegisterPage.jsx
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import authApi from "../../api/authApi";
+import { useNavigate } from "react-router-dom";
+import { register } from "../../api/authApi"; // your API call
 import "./RegisterPage.css";
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -14,16 +17,9 @@ const RegisterPage = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-
-    if (name === "password") {
-      setPasswordStrength(calculatePasswordStrength(value));
-    }
-  };
-
+  // Calculate password strength
   const calculatePasswordStrength = (password) => {
     let strength = 0;
     if (password.length >= 8) strength += 25;
@@ -33,28 +29,24 @@ const RegisterPage = () => {
     return strength;
   };
 
-  const getStrengthColor = () => {
-    if (passwordStrength < 50) return "red";
-    if (passwordStrength < 75) return "orange";
-    return "green";
+  const getStrengthColor = () =>
+    passwordStrength < 50 ? "red" : passwordStrength < 75 ? "orange" : "green";
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "password") setPasswordStrength(calculatePasswordStrength(value));
   };
 
   const validate = () => {
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = "Name is required";
-    if (!form.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      newErrors.email = "Invalid email format";
-    }
-    if (!form.password) {
-      newErrors.password = "Password is required";
-    } else if (form.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    }
-    if (form.confirmPassword !== form.password) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
+    if (!form.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Invalid email format";
+    if (!form.password) newErrors.password = "Password is required";
+    else if (form.password.length < 8) newErrors.password = "Password must be at least 8 characters";
+    if (form.confirmPassword !== form.password) newErrors.confirmPassword = "Passwords do not match";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -62,11 +54,26 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+
     try {
-      await authApi.register(form);
+      setLoading(true);
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: "EMPLOYEE", // send default role
+      });
+
       alert("Registration successful! Please log in.");
-    } catch (error) {
-      alert(error.response?.data?.message || "Registration failed");
+      navigate("/login");
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed";
+      setErrors({ submit: message });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,6 +81,7 @@ const RegisterPage = () => {
     <div className="register-container">
       <form className="register-form" onSubmit={handleSubmit}>
         <h2>Register</h2>
+        {errors.submit && <p className="submit-error">{errors.submit}</p>}
 
         <InputField
           label="Name"
@@ -82,7 +90,6 @@ const RegisterPage = () => {
           error={errors.name}
           onChange={handleChange}
         />
-
         <InputField
           label="Email"
           name="email"
@@ -90,7 +97,6 @@ const RegisterPage = () => {
           error={errors.email}
           onChange={handleChange}
         />
-
         <PasswordField
           label="Password"
           name="password"
@@ -102,7 +108,6 @@ const RegisterPage = () => {
           strength={passwordStrength}
           getStrengthColor={getStrengthColor}
         />
-
         <PasswordField
           label="Confirm Password"
           name="confirmPassword"
@@ -113,14 +118,15 @@ const RegisterPage = () => {
           onChange={handleChange}
         />
 
-        <button type="submit" className="btn-register">
-          Register
+        <button type="submit" className="btn-register" disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
       </form>
     </div>
   );
 };
 
+// Reusable input field
 const InputField = ({ label, name, value, error, onChange }) => (
   <div className="input-group">
     <label>{label}</label>
@@ -135,17 +141,8 @@ const InputField = ({ label, name, value, error, onChange }) => (
   </div>
 );
 
-const PasswordField = ({
-  label,
-  name,
-  value,
-  error,
-  show,
-  toggle,
-  onChange,
-  strength,
-  getStrengthColor,
-}) => (
+// Reusable password field
+const PasswordField = ({ label, name, value, error, show, toggle, onChange, strength, getStrengthColor }) => (
   <div className="input-group">
     <label>{label}</label>
     <div className="password-wrapper">
@@ -163,10 +160,7 @@ const PasswordField = ({
     {strength !== undefined && value && (
       <div
         className="password-strength"
-        style={{
-          width: `${strength}%`,
-          backgroundColor: getStrengthColor(),
-        }}
+        style={{ width: `${strength}%`, backgroundColor: getStrengthColor() }}
       />
     )}
     {error && <span className="error-message">{error}</span>}

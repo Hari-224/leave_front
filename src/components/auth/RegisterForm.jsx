@@ -1,17 +1,13 @@
+// src/components/auth/RegisterForm.jsx
 import React, { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle, Shield, Zap } from "lucide-react";
+import {
+  Eye, EyeOff, Mail, Lock, User,
+  AlertCircle, CheckCircle, Shield
+} from "lucide-react";
+import { register } from "../../api/authApi"; // Your real API call
 import "./RegisterForm.css";
 
-// Mock API - replace with real API call
-const authApi = {
-  register: async ({ name, email, password }) => {
-    await new Promise(r => setTimeout(r, 1500));
-    if (email === "existing@example.com") throw new Error("Email already exists");
-    return { success: true };
-  }
-};
-
-const RegisterForm = () => {
+const RegisterForm = ({ onRegisterSuccess }) => {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
@@ -20,12 +16,14 @@ const RegisterForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
 
+  // Handle input change
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm(prev => ({ ...prev, [name]: value }));
     validateField(name, value);
   };
 
+  // Validate single field
   const validateField = (name, value) => {
     let newErrors = { ...errors };
     switch (name) {
@@ -44,18 +42,21 @@ const RegisterForm = () => {
         else if (value.length < 8) newErrors.password = "Min 8 characters";
         else delete newErrors.password;
         setPasswordStrength(calculateStrength(value));
-        if (form.confirmPassword && value !== form.confirmPassword) newErrors.confirmPassword = "Passwords must match";
+        if (form.confirmPassword && value !== form.confirmPassword)
+          newErrors.confirmPassword = "Passwords must match";
         else delete newErrors.confirmPassword;
         break;
       case "confirmPassword":
         if (value !== form.password) newErrors.confirmPassword = "Passwords must match";
         else delete newErrors.confirmPassword;
         break;
-      default: break;
+      default:
+        break;
     }
     setErrors(newErrors);
   };
 
+  // Password strength calculation
   const calculateStrength = password => {
     let strength = 0;
     if (password.length >= 8) strength += 20;
@@ -66,25 +67,33 @@ const RegisterForm = () => {
     return Math.min(strength, 100);
   };
 
-  const getStrengthColor = () => {
-    if (passwordStrength < 30) return "red";
-    if (passwordStrength < 60) return "yellow";
-    if (passwordStrength < 80) return "blue";
+  const getStrengthColor = strength => {
+    if (strength < 30) return "red";
+    if (strength < 60) return "orange";
+    if (strength < 80) return "blue";
     return "green";
   };
 
+  // Form submission
   const handleSubmit = async e => {
     e.preventDefault();
-    if (Object.keys(errors).length || !form.name || !form.email || !form.password || !form.confirmPassword) return;
+    // final validation
+    const hasErrors = Object.keys(errors).length || !form.name || !form.email || !form.password || !form.confirmPassword;
+    if (hasErrors) return;
+
     setIsSubmitting(true);
+    setErrors({});
+    setSuccess("");
+
     try {
-      await authApi.register(form);
-      setSuccess("Registration successful!");
+      const data = await register({ name: form.name, email: form.email, password: form.password });
+      setSuccess("Registration successful! You can now log in.");
       setForm({ name: "", email: "", password: "", confirmPassword: "" });
-      setErrors({});
       setPasswordStrength(0);
+
+      if (onRegisterSuccess) onRegisterSuccess(data); // callback for redirect or auto-login
     } catch (err) {
-      setErrors({ submit: err.message });
+      setErrors({ submit: err.response?.data?.message || err.message || "Registration failed" });
     } finally {
       setIsSubmitting(false);
     }
@@ -103,41 +112,10 @@ const RegisterForm = () => {
         {errors.submit && <div className="error-msg"><AlertCircle /> {errors.submit}</div>}
 
         <form className="register-form" onSubmit={handleSubmit}>
-          <InputField 
-            label="Full Name" 
-            name="name" 
-            value={form.name} 
-            error={errors.name} 
-            icon={User} 
-            onChange={handleChange} 
-          />
-          <InputField 
-            label="Email" 
-            name="email" 
-            value={form.email} 
-            error={errors.email} 
-            icon={Mail} 
-            onChange={handleChange} 
-          />
-          <PasswordField 
-            label="Password" 
-            name="password" 
-            value={form.password} 
-            error={errors.password} 
-            show={showPassword} 
-            toggle={() => setShowPassword(!showPassword)} 
-            onChange={handleChange} 
-            strength={passwordStrength} 
-          />
-          <PasswordField 
-            label="Confirm Password" 
-            name="confirmPassword" 
-            value={form.confirmPassword} 
-            error={errors.confirmPassword} 
-            show={showConfirmPassword} 
-            toggle={() => setShowConfirmPassword(!showConfirmPassword)} 
-            onChange={handleChange} 
-          />
+          <InputField label="Full Name" name="name" value={form.name} error={errors.name} icon={User} onChange={handleChange} />
+          <InputField label="Email" name="email" value={form.email} error={errors.email} icon={Mail} onChange={handleChange} />
+          <PasswordField label="Password" name="password" value={form.password} error={errors.password} show={showPassword} toggle={() => setShowPassword(!showPassword)} onChange={handleChange} strength={passwordStrength} getStrengthColor={getStrengthColor} />
+          <PasswordField label="Confirm Password" name="confirmPassword" value={form.confirmPassword} error={errors.confirmPassword} show={showConfirmPassword} toggle={() => setShowConfirmPassword(!showConfirmPassword)} onChange={handleChange} />
 
           <button type="submit" disabled={isSubmitting || Object.keys(errors).length > 0} className="submit-btn">
             {isSubmitting ? "Creating Account..." : "Create Account"}
@@ -145,14 +123,14 @@ const RegisterForm = () => {
         </form>
 
         <p className="footer-text">
-          Already have an account? <button className="link-btn">Sign in here</button>
+          Already have an account? <a href="/login" className="link-btn">Sign in here</a>
         </p>
       </div>
     </div>
   );
 };
 
-// Reusable Input Field
+// Input Field Component
 const InputField = ({ label, name, value, error, icon: Icon, onChange }) => (
   <div className="input-group">
     <label>{label}</label>
@@ -165,8 +143,8 @@ const InputField = ({ label, name, value, error, icon: Icon, onChange }) => (
   </div>
 );
 
-// Reusable Password Field
-const PasswordField = ({ label, name, value, error, show, toggle, onChange, strength }) => (
+// Password Field Component
+const PasswordField = ({ label, name, value, error, show, toggle, onChange, strength, getStrengthColor }) => (
   <div className="input-group">
     <label>{label}</label>
     <div className="input-wrapper">

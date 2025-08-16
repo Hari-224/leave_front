@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import { getToken, setToken, removeToken } from "../utils/storage";
-import authApi from "../api/authApi";
+import { login as loginApi } from "../api/authApi"; // use named import
 
 export const AuthContext = createContext();
 
@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const response = await authApi.login(email, password);
+    const response = await loginApi(email, password); // call the named import
     setToken(response.data);
     setUser(response.data);
   };

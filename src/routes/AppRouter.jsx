@@ -1,3 +1,4 @@
+// src/routes/AppRouter.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
@@ -13,9 +14,11 @@ import LeaveTypeList from "../pages/leaveType/LeaveTypeList";
 function AppRouter() {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
+      {/* Protected routes */}
       <Route
         path="/*"
         element={
@@ -24,6 +27,7 @@ function AppRouter() {
           </ProtectedRoute>
         }
       >
+        {/* Dashboard child routes */}
         <Route index element={<LeaveList />} />
         <Route path="create-leave" element={<CreateLeave />} />
         <Route path="leave/:id" element={<LeaveDetailsPage />} />

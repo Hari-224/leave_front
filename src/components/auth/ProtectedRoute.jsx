@@ -1,34 +1,9 @@
+// src/components/auth/ProtectedRoute.jsx
 import React, { useState, useEffect } from "react";
-import { Shield, Lock, AlertCircle, Loader2, UserX } from "lucide-react";
+import { AlertCircle, Loader2, UserX } from "lucide-react";
+import { getToken, removeToken } from "../../utils/storage";
+import { jwtDecode } from "jwt-decode"; // ✅ named import
 import "./ProtectedRoute.css";
-
-// Mock auth hook - replace with your actual AuthContext
-const useAuth = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('jwt_token');
-        const userData = localStorage.getItem('user_info');
-        if (token && userData) {
-          await new Promise(res => setTimeout(res, 800));
-          setUser(JSON.parse(userData));
-          setIsAuthenticated(true);
-        }
-      } catch (e) {
-        localStorage.clear();
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  return { user, loading, isAuthenticated };
-};
 
 // Loading Screen
 const AuthLoading = () => (
@@ -56,7 +31,15 @@ const Unauthorized = ({ requiredRole, userRole, onRetry }) => (
       )}
       <button className="btn-primary" onClick={onRetry}>Try Again</button>
       <button className="btn-secondary" onClick={() => window.history.back()}>Go Back</button>
-      <button className="btn-danger" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>Sign Out</button>
+      <button
+        className="btn-danger"
+        onClick={() => {
+          removeToken();
+          window.location.href = "/login";
+        }}
+      >
+        Sign Out
+      </button>
     </div>
   </div>
 );
@@ -80,23 +63,47 @@ const ProtectedRoute = ({
   fallbackPath = "/login",
   sessionTimeoutMinutes = 30,
 }) => {
-  const { user, loading, isAuthenticated } = useAuth();
-  const [unauthorized, setUnauthorized] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionWarning, setSessionWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [lastActivity, setLastActivity] = useState(Date.now());
 
-  const redirect = (path) => window.location.href = path;
+  const tokenData = getToken();
+  const token = tokenData?.token;
+
+  const redirect = (path) => (window.location.href = path);
+
+  // Decode JWT to get user info
+  useEffect(() => {
+    if (!token) {
+      redirect(fallbackPath);
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token); // ✅ named import usage
+      setUser({ email: decoded.email, role: decoded.role });
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error("Invalid token:", err);
+      removeToken();
+      redirect(fallbackPath);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, fallbackPath]);
 
   // Track user activity
   useEffect(() => {
     const updateActivity = () => setLastActivity(Date.now());
-    ["mousedown", "keydown", "scroll", "touchstart"].forEach(event =>
-      document.addEventListener(event, updateActivity)
+    ["mousedown", "keydown", "scroll", "touchstart"].forEach(evt =>
+      document.addEventListener(evt, updateActivity)
     );
     return () => {
-      ["mousedown", "keydown", "scroll", "touchstart"].forEach(event =>
-        document.removeEventListener(event, updateActivity)
+      ["mousedown", "keydown", "scroll", "touchstart"].forEach(evt =>
+        document.removeEventListener(evt, updateActivity)
       );
     };
   }, []);
@@ -104,30 +111,67 @@ const ProtectedRoute = ({
   // Session timeout
   useEffect(() => {
     if (!isAuthenticated) return;
+
     const interval = setInterval(() => {
       const sessionDuration = sessionTimeoutMinutes * 60 * 1000;
-      const timeRemaining = sessionDuration - (Date.now() - lastActivity);
-      if (timeRemaining <= 30000 && timeRemaining > 0) setSessionWarning(true);
-      else if (timeRemaining <= 0) logout();
-      setTimeLeft(Math.floor(timeRemaining / 1000));
+      const remaining = sessionDuration - (Date.now() - lastActivity);
+
+      if (remaining <= 30000 && remaining > 0) setSessionWarning(true);
+      else if (remaining <= 0) logout();
+
+      setTimeLeft(Math.floor(Math.max(remaining / 1000, 0)));
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [lastActivity, isAuthenticated]);
+  }, [lastActivity, isAuthenticated, sessionTimeoutMinutes]);
 
-  const hasRole = (userRole, required) => !required || userRole === required;
+  // Role check
+  const hasRole = (userRole, required) => {
+    if (!required) return true;
+    if (userRole === required) return true;
+    const hierarchy = ["EMPLOYEE", "MANAGER", "ADMIN"];
+    return hierarchy.indexOf(userRole) > hierarchy.indexOf(required);
+  };
 
-  const handleRetry = () => { setUnauthorized(false); window.location.reload(); };
-  const extendSession = () => { setLastActivity(Date.now()); setSessionWarning(false); };
-  const logout = () => { localStorage.clear(); redirect("/login"); };
+  const handleRetry = () => window.location.reload();
+
+  const extendSession = () => {
+    setLastActivity(Date.now());
+    setSessionWarning(false);
+  };
+
+  const logout = () => {
+    removeToken();
+    redirect("/login");
+  };
 
   if (loading) return <AuthLoading />;
-  if (!isAuthenticated || !user) { redirect(fallbackPath); return <AuthLoading />; }
-  if (requiredRole && !hasRole(user.role, requiredRole)) return <Unauthorized requiredRole={requiredRole} userRole={user.role} onRetry={handleRetry} />;
+
+  if (!isAuthenticated || !user) {
+    redirect(fallbackPath);
+    return <AuthLoading />;
+  }
+
+  if (requiredRole && !hasRole(user.role, requiredRole)) {
+    return (
+      <Unauthorized
+        requiredRole={requiredRole}
+        userRole={user.role}
+        onRetry={handleRetry}
+      />
+    );
+  }
 
   return (
     <>
       {children}
-      {sessionWarning && <SessionWarning onExtend={extendSession} onLogout={logout} timeLeft={timeLeft} />}
+      {sessionWarning && (
+        <SessionWarning
+          onExtend={extendSession}
+          onLogout={logout}
+          timeLeft={timeLeft}
+        />
+      )}
     </>
   );
 };

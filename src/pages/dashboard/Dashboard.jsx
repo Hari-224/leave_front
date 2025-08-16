@@ -1,44 +1,109 @@
-import React, { useState } from 'react';
-import './Dashboard.css';
+// src/pages/dashboard/Dashboard.jsx
+import React, { useState, useEffect } from "react";
 import {
   Calendar, Clock, Users, FileText, Settings, Bell, User, LogOut,
   Menu, X, CheckCircle, XCircle, AlertCircle, Plus, BarChart3
-} from 'lucide-react';
+} from "lucide-react";
+import axios from "axios";
+import { useAuth } from "../../hooks/useAuth"; // JWT auth hook
+import "./Dashboard.css";
 
 const Dashboard = () => {
-  const [role, setRole] = useState('admin');
+  const { user: authUser, token, logout } = useAuth();
+  const [role, setRole] = useState(authUser?.role || "admin");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState(3);
-  const [page, setPage] = useState('overview');
+  const [notifications, setNotifications] = useState(0);
+  const [page, setPage] = useState("overview");
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const user = {
-    name: 'John Doe',
-    email: 'john@company.com',
-    role: role.charAt(0).toUpperCase() + role.slice(1),
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
+  // Axios instance with JWT
+  const api = axios.create({
+    baseURL: "http://localhost:8080/api",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // Fetch dashboard stats
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      if (role === "admin") {
+        const leavesRes = await api.get("/leaves");
+        const leaves = leavesRes.data;
+        const pending = leaves.filter(l => l.status === "PENDING").length;
+        const approvedToday = leaves.filter(l => 
+          l.approvedDate && new Date(l.approvedDate).toDateString() === new Date().toDateString()
+        ).length;
+        const employeesRes = await api.get("/users");
+        setStats({
+          totalLeaves: leaves.length,
+          pendingApprovals: pending,
+          approvedToday,
+          activeEmployees: employeesRes.data.length,
+        });
+      } else if (role === "manager") {
+        const teamLeavesRes = await api.get(`/leaves/team/${authUser.id}`);
+        const teamLeaves = teamLeavesRes.data;
+        const pending = teamLeaves.filter(l => l.status === "PENDING").length;
+        const approvedThisWeek = teamLeaves.filter(l => {
+          if (!l.approvedDate) return false;
+          const approvedDate = new Date(l.approvedDate);
+          const today = new Date();
+          const weekAgo = new Date();
+          weekAgo.setDate(today.getDate() - 7);
+          return approvedDate >= weekAgo && approvedDate <= today && l.status === "APPROVED";
+        }).length;
+        const teamRes = await api.get(`/users/team/${authUser.id}`);
+        setStats({
+          teamLeaves: teamLeaves.length,
+          pendingApprovals: pending,
+          approvedThisWeek,
+          teamSize: teamRes.data.length,
+        });
+      } else if (role === "employee") {
+        const myLeavesRes = await api.get(`/leaves/user/${authUser.id}`);
+        const myLeaves = myLeavesRes.data;
+        const pendingRequests = myLeaves.filter(l => l.status === "PENDING").length;
+        const usedLeaves = myLeaves.filter(l => l.status === "APPROVED").length;
+        setStats({
+          totalLeaves: myLeaves.length,
+          usedLeaves,
+          remainingLeaves: 20 - usedLeaves, // adjust as per your policy
+          pendingRequests,
+        });
+      }
+
+      // Notifications
+      const notifRes = await api.get("/notifications");
+      setNotifications(notifRes.data.length);
+
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      alert("Failed to fetch dashboard data");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const stats = {
-    admin: { totalLeaves: 156, pendingApprovals: 23, approvedToday: 8, rejectedToday: 2, activeEmployees: 45 },
-    manager: { teamLeaves: 24, pendingApprovals: 7, teamSize: 12, approvedThisWeek: 5 },
-    employee: { totalLeaves: 12, usedLeaves: 8, remainingLeaves: 4, pendingRequests: 1 }
-  };
+  useEffect(() => {
+    fetchStats();
+  }, [role]);
 
   const navItems = {
     admin: [
-      { icon: FileText, label: 'All Leaves', path: 'leaves' },
-      { icon: Users, label: 'Employees', path: 'employees' },
-      { icon: Settings, label: 'Leave Types', path: 'leave-types' },
-      { icon: BarChart3, label: 'Reports', path: 'reports' }
+      { icon: FileText, label: "All Leaves", path: "leaves" },
+      { icon: Users, label: "Employees", path: "employees" },
+      { icon: Settings, label: "Leave Types", path: "leave-types" },
+      { icon: BarChart3, label: "Reports", path: "reports" }
     ],
     manager: [
-      { icon: FileText, label: 'Team Leaves', path: 'team-leaves' },
-      { icon: Users, label: 'My Team', path: 'team' },
-      { icon: CheckCircle, label: 'Approvals', path: 'approvals' }
+      { icon: FileText, label: "Team Leaves", path: "team-leaves" },
+      { icon: Users, label: "My Team", path: "team" },
+      { icon: CheckCircle, label: "Approvals", path: "approvals" }
     ],
     employee: [
-      { icon: FileText, label: 'My Leaves', path: 'my-leaves' },
-      { icon: Plus, label: 'Request Leave', path: 'request-leave' }
+      { icon: FileText, label: "My Leaves", path: "my-leaves" },
+      { icon: Plus, label: "Request Leave", path: "request-leave" }
     ]
   };
 
@@ -49,41 +114,41 @@ const Dashboard = () => {
       </div>
       <div>
         <p className="stat-title">{title}</p>
-        <p className="stat-value">{value}</p>
+        <p className="stat-value">{loading ? "..." : value}</p>
         {subtitle && <p className="stat-sub">{subtitle}</p>}
       </div>
     </div>
   );
 
   const RoleContent = () => {
-    if (page !== 'overview') return <div className="page-placeholder">{page.toUpperCase()} PAGE</div>;
-    if (role === 'admin') {
+    if (page !== "overview") return <div className="page-placeholder">{page.toUpperCase()} PAGE</div>;
+    if (role === "admin") {
       return (
         <div className="grid">
-          <StatCard icon={FileText} title="Total Leave Requests" value={stats.admin.totalLeaves} subtitle="This month" color="blue" />
-          <StatCard icon={Clock} title="Pending Approvals" value={stats.admin.pendingApprovals} subtitle="Requires action" color="yellow" />
-          <StatCard icon={CheckCircle} title="Approved Today" value={stats.admin.approvedToday} color="green" />
-          <StatCard icon={Users} title="Active Employees" value={stats.admin.activeEmployees} color="purple" />
+          <StatCard icon={FileText} title="Total Leave Requests" value={stats.totalLeaves} subtitle="This month" color="blue" />
+          <StatCard icon={Clock} title="Pending Approvals" value={stats.pendingApprovals} subtitle="Requires action" color="yellow" />
+          <StatCard icon={CheckCircle} title="Approved Today" value={stats.approvedToday} color="green" />
+          <StatCard icon={Users} title="Active Employees" value={stats.activeEmployees} color="purple" />
         </div>
       );
     }
-    if (role === 'manager') {
+    if (role === "manager") {
       return (
         <div className="grid">
-          <StatCard icon={Users} title="Team Size" value={stats.manager.teamSize} color="blue" />
-          <StatCard icon={FileText} title="Team Leaves" value={stats.manager.teamLeaves} subtitle="This month" color="purple" />
-          <StatCard icon={Clock} title="Pending Approvals" value={stats.manager.pendingApprovals} subtitle="Requires action" color="yellow" />
-          <StatCard icon={CheckCircle} title="Approved This Week" value={stats.manager.approvedThisWeek} color="green" />
+          <StatCard icon={Users} title="Team Size" value={stats.teamSize} color="blue" />
+          <StatCard icon={FileText} title="Team Leaves" value={stats.teamLeaves} subtitle="This month" color="purple" />
+          <StatCard icon={Clock} title="Pending Approvals" value={stats.pendingApprovals} subtitle="Requires action" color="yellow" />
+          <StatCard icon={CheckCircle} title="Approved This Week" value={stats.approvedThisWeek} color="green" />
         </div>
       );
     }
-    if (role === 'employee') {
+    if (role === "employee") {
       return (
         <div className="grid">
-          <StatCard icon={FileText} title="Total Leaves" value={stats.employee.totalLeaves} subtitle="This year" color="blue" />
-          <StatCard icon={CheckCircle} title="Used Leaves" value={stats.employee.usedLeaves} color="green" />
-          <StatCard icon={Calendar} title="Remaining" value={stats.employee.remainingLeaves} color="purple" />
-          <StatCard icon={Clock} title="Pending" value={stats.employee.pendingRequests} color="yellow" />
+          <StatCard icon={FileText} title="Total Leaves" value={stats.totalLeaves} subtitle="This year" color="blue" />
+          <StatCard icon={CheckCircle} title="Used Leaves" value={stats.usedLeaves} color="green" />
+          <StatCard icon={Calendar} title="Remaining" value={stats.remainingLeaves} color="purple" />
+          <StatCard icon={Clock} title="Pending" value={stats.pendingRequests} color="yellow" />
         </div>
       );
     }
@@ -92,35 +157,35 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <div className="role-switch">
-        {['admin', 'manager', 'employee'].map(r => (
-          <button key={r} onClick={() => { setRole(r); setPage('overview'); }} className={role === r ? 'active' : ''}>
+        {["admin", "manager", "employee"].map(r => (
+          <button key={r} onClick={() => { setRole(r); setPage("overview"); }} className={role === r ? "active" : ""}>
             {r}
           </button>
         ))}
       </div>
 
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
           <Calendar className="logo" /> LeaveHub
           <X onClick={() => setSidebarOpen(false)} className="close-btn" />
         </div>
         <nav>
-          <button onClick={() => setPage('overview')} className={page === 'overview' ? 'active' : ''}>
+          <button onClick={() => setPage("overview")} className={page === "overview" ? "active" : ""}>
             <BarChart3 /> Overview
           </button>
           {navItems[role].map(item => (
-            <button key={item.path} onClick={() => setPage(item.path)} className={page === item.path ? 'active' : ''}>
+            <button key={item.path} onClick={() => setPage(item.path)} className={page === item.path ? "active" : ""}>
               <item.icon /> {item.label}
             </button>
           ))}
         </nav>
         <div className="sidebar-user">
-          <img src={user.avatar} alt={user.name} />
+          <img src={authUser.avatar || ""} alt={authUser.name} />
           <div>
-            <p>{user.name}</p>
-            <small>{user.role}</small>
+            <p>{authUser.name}</p>
+            <small>{role.charAt(0).toUpperCase() + role.slice(1)}</small>
           </div>
-          <button onClick={() => alert('Logout')}><LogOut /> Logout</button>
+          <button onClick={logout}><LogOut /> Logout</button>
         </div>
       </aside>
 
@@ -131,8 +196,8 @@ const Dashboard = () => {
             <Bell />
             {notifications > 0 && <span>{notifications}</span>}
           </button>
-          <img src={user.avatar} alt={user.name} className="avatar" />
-          <span>{user.name}</span>
+          <img src={authUser.avatar || ""} alt={authUser.name} className="avatar" />
+          <span>{authUser.name}</span>
         </div>
       </header>
 

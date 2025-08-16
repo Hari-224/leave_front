@@ -1,14 +1,40 @@
+// utils/storage.js
+
 const TOKEN_KEY = "jwt_token";
 
+/**
+ * Get JWT token from localStorage
+ * @returns {object|null}
+ */
 export const getToken = () => {
-  const data = localStorage.getItem(TOKEN_KEY);
-  return data ? JSON.parse(data) : null;
+  try {
+    const data = localStorage.getItem(TOKEN_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    console.error("Error reading token from storage:", err);
+    return null;
+  }
 };
 
+/**
+ * Save JWT token to localStorage
+ * @param {object} data
+ */
 export const setToken = (data) => {
-  localStorage.setItem(TOKEN_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.error("Error saving token to storage:", err);
+  }
 };
 
+/**
+ * Remove JWT token from localStorage
+ */
 export const removeToken = () => {
-  localStorage.removeItem(TOKEN_KEY);
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch (err) {
+    console.error("Error removing token from storage:", err);
+  }
 };

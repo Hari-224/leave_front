@@ -1,16 +1,18 @@
+// src/pages/auth/LoginForm.jsx
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../hooks/useAuth";
-import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { login } from "../../api/authApi";
+import { setToken } from "../../utils/storage";
 import "./LoginForm.css";
 
-const LoginForm = () => {
-  const { login, loading } = useAuth();
+const LoginForm = ({ onLoginSuccess }) => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touched, setTouched] = useState({});
 
+  // Validate individual fields
   const validate = (name, value) => {
     const newErrors = { ...errors };
     if (name === "email") {
@@ -42,26 +44,45 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
     const emailValid = validate("email", form.email);
     const passwordValid = validate("password", form.password);
-    if (!emailValid || !passwordValid) return setIsSubmitting(false);
+    if (!emailValid || !passwordValid) {
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      await login(form.email, form.password);
+      // Real API call
+      const res = await login({ email: form.email, password: form.password });
+
+      // Save JWT token
+      setToken(res);
+
+      // Call callback with email & role
+      if (onLoginSuccess) onLoginSuccess({ email: res.email, role: res.role });
+      else window.location.href = "/"; // default route
     } catch (err) {
-      setErrors({ submit: err.response?.data?.message || "Invalid credentials" });
+      setErrors({
+        submit: err.response?.data?.error || "Invalid credentials",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Clear submit error on field change
   useEffect(() => {
     if (errors.submit && (form.email || form.password)) {
       setErrors((prev) => ({ ...prev, submit: null }));
     }
   }, [form, errors.submit]);
 
-  const isFormValid = form.email && form.password && Object.keys(errors).length === 0;
+  const isFormValid =
+    form.email &&
+    form.password &&
+    !errors.email &&
+    !errors.password;
 
   return (
     <div className="login-page">
@@ -75,7 +96,11 @@ const LoginForm = () => {
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          {errors.submit && <div className="submit-error"><AlertCircle />{errors.submit}</div>}
+          {errors.submit && (
+            <div className="submit-error">
+              <AlertCircle /> {errors.submit}
+            </div>
+          )}
 
           <div className="input-group">
             <label>Email Address</label>
@@ -88,11 +113,15 @@ const LoginForm = () => {
                 onChange={handleChange}
                 onBlur={handleBlur}
                 placeholder="Enter your email"
-                disabled={isSubmitting || loading}
+                disabled={isSubmitting}
               />
               {form.email && !errors.email && <CheckCircle className="success-icon" />}
             </div>
-            {errors.email && <p className="error-text"><AlertCircle /> {errors.email}</p>}
+            {errors.email && (
+              <p className="error-text">
+                <AlertCircle /> {errors.email}
+              </p>
+            )}
           </div>
 
           <div className="input-group">
@@ -106,22 +135,36 @@ const LoginForm = () => {
                 onChange={handleChange}
                 onBlur={handleBlur}
                 placeholder="Enter your password"
-                disabled={isSubmitting || loading}
+                disabled={isSubmitting}
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="show-pass">
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="show-pass"
+              >
                 {showPassword ? <EyeOff /> : <Eye />}
               </button>
             </div>
-            {errors.password && <p className="error-text"><AlertCircle /> {errors.password}</p>}
+            {errors.password && (
+              <p className="error-text">
+                <AlertCircle /> {errors.password}
+              </p>
+            )}
           </div>
 
-          <button type="submit" disabled={!isFormValid || isSubmitting || loading} className="submit-btn">
-            {isSubmitting || loading ? "Signing In..." : "Sign In"}
+          <button
+            type="submit"
+            disabled={!isFormValid || isSubmitting}
+            className="submit-btn"
+          >
+            {isSubmitting ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
         <div className="login-footer">
-          <p>Don't have an account? <button className="link-btn">Sign up</button></p>
+          <p>
+            Don't have an account? <button className="link-btn">Sign up</button>
+          </p>
         </div>
       </div>
     </div>

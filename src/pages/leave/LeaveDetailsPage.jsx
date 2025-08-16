@@ -1,30 +1,44 @@
-// src/pages/leave/LeaveDetailsPage.jsx
-import React from "react";
+// src/pages/leaves/LeaveDetailsPage.jsx
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth"; // JWT hook
+import axios from "axios";
+import { Loader2 } from "lucide-react";
 import { ROLES, LEAVE_STATUS } from "../../utils/constants";
 import "./LeaveDetailsPage.css";
 
 const LeaveDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth();
 
-  // Example data — replace with API call
-  const leave = {
-    id,
-    type: "SICK",
-    status: LEAVE_STATUS.PENDING,
-    startDate: "2025-08-20",
-    endDate: "2025-08-22",
-    reason: "Fever and rest needed",
-    requestedBy: {
-      name: "John Doe",
-      role: ROLES.EMPLOYEE,
-      email: "john@example.com",
-    },
-  };
+  const [leave, setLeave] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const api = axios.create({
+    baseURL: "http://localhost:8080/api",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // Fetch leave details
+  useEffect(() => {
+    const fetchLeave = async () => {
+      try {
+        const res = await api.get(`/leave-applications/${id}`);
+        setLeave(res.data);
+      } catch (err) {
+        console.error(err);
+        setError(err.response?.data?.message || "Failed to fetch leave details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeave();
+  }, [id, token]);
 
   const getStatusClass = (status) => {
-    switch (status) {
+    switch (status?.toUpperCase()) {
       case LEAVE_STATUS.PENDING:
         return "badge pending";
       case LEAVE_STATUS.APPROVED:
@@ -37,7 +51,7 @@ const LeaveDetailsPage = () => {
   };
 
   const getRoleClass = (role) => {
-    switch (role) {
+    switch (role?.toLowerCase()) {
       case ROLES.ADMIN:
         return "role admin";
       case ROLES.MANAGER:
@@ -49,47 +63,91 @@ const LeaveDetailsPage = () => {
     }
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (loading)
+    return (
+      <div className="loading-screen">
+        <Loader2 className="spin" /> Loading leave details...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="error-screen">
+        <p>{error}</p>
+        <button onClick={() => navigate("/leave-applications")} className="btn primary">
+          Back to List
+        </button>
+      </div>
+    );
+
   return (
-    <div className="container">
+    <div className="leave-details-container">
       <h1>Leave Application Details</h1>
 
-      <div style={{ marginBottom: "20px" }}>
+      <div className="detail-row">
         <strong>Leave ID:</strong> {leave.id}
       </div>
 
-      <div>
-        <strong>Type:</strong> {leave.type}
+      <div className="detail-row">
+        <strong>Type:</strong> {leave.leaveType}
       </div>
 
-      <div>
+      <div className="detail-row">
         <strong>Status:</strong>{" "}
         <span className={getStatusClass(leave.status)}>{leave.status}</span>
       </div>
 
-      <div>
-        <strong>From:</strong> {leave.startDate}
+      <div className="detail-row">
+        <strong>From:</strong> {formatDate(leave.startDate)}
       </div>
 
-      <div>
-        <strong>To:</strong> {leave.endDate}
+      <div className="detail-row">
+        <strong>To:</strong> {formatDate(leave.endDate)}
       </div>
 
-      <div>
-        <strong>Reason:</strong> {leave.reason}
+      <div className="detail-row">
+        <strong>Reason:</strong> {leave.reason || "-"}
       </div>
 
-      <div style={{ marginTop: "20px" }}>
+      {leave.halfDay && (
+        <div className="detail-row">
+          <strong>Half-Day:</strong> Yes
+        </div>
+      )}
+
+      {leave.emergencyContact && (
+        <div className="detail-row">
+          <strong>Emergency Contact:</strong> {leave.emergencyContact}
+        </div>
+      )}
+
+      <div className="requester-info">
         <h3>Requested By</h3>
-        <p>
-          <span className={getRoleClass(leave.requestedBy.role)}>
-            {leave.requestedBy.role}
-          </span>{" "}
-          — {leave.requestedBy.name}
-        </p>
-        <p>{leave.requestedBy.email}</p>
+        {leave.user ? (
+          <>
+            <p>
+              <span className={getRoleClass(leave.user.role)}>
+                {leave.user.role}
+              </span>{" "}
+              — {leave.user.name}
+            </p>
+            <p>{leave.user.email}</p>
+          </>
+        ) : (
+          <p>-</p>
+        )}
       </div>
 
-      <div style={{ marginTop: "30px" }}>
+      <div className="actions">
         <button
           className="btn primary"
           onClick={() => navigate("/leave-applications")}

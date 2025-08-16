@@ -1,7 +1,28 @@
 import axios from "axios";
-const API_URL = process.env.REACT_APP_API_BASE_URL;
 
-const login = (email, password) => axios.post(`${API_URL}/users/login`, { email, password });
-const register = (data) => axios.post(`${API_URL}/users/register`, data);
+const API_URL = "http://localhost:8080/api/users"; // Spring Boot backend URL
+ // base path
 
-export default { login, register };
+export const register = async (userData) => {
+  const res = await axios.post(`${API_URL}/register`, userData);
+  return res.data;
+};
+
+export const login = async (credentials) => {
+  const res = await axios.post(`${API_URL}/login`, credentials);
+  return res.data; // { token, role, email }
+};
+
+export const getAllUsers = async (token) => {
+  const res = await axios.get(API_URL, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+
+export const getUserById = async (id, token) => {
+  const res = await axios.get(`${API_URL}/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
